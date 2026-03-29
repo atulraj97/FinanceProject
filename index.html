@@ -273,7 +273,6 @@ tr:hover td{background:var(--card-hover)}
 
 /* Large mobile */
 @media(max-width:700px){
-  .sync-status{display:none}
   .privacy-badge{display:none}
   #provider-status{display:none}
   .divider{display:none}
@@ -384,11 +383,43 @@ tr:hover td{background:var(--card-hover)}
 .fab-action-label{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--text);white-space:nowrap}
 .fab-action-btn{width:40px;height:40px;border-radius:50%;border:none;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
 @media(max-width:600px){#mobile-fab{display:flex}}
-.import-center{max-width:760px;margin:0 auto}
-.hint-box{background:#0a0d14;border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--muted);margin-bottom:10px}
+/* ── Login Screen ────────────────────────────────────────────── */
+#login-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:#07090f;z-index:999;display:flex;align-items:center;justify-content:center}
+#login-screen.hidden{display:none}
+.login-card{background:#111827;border:1px solid rgba(201,162,39,0.3);border-radius:20px;padding:40px 36px;width:min(360px,92vw);box-shadow:0 24px 80px rgba(0,0,0,0.8);display:flex;flex-direction:column;align-items:center;gap:20px}
+.login-logo{width:56px;height:56px;background:var(--gold);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:28px;color:#07090f}
+.login-title{font-weight:700;font-size:22px;color:#e2e8f0;text-align:center}
+.login-sub{font-size:13px;color:#64748b;text-align:center;margin-top:-12px}
+.login-fields{display:flex;flex-direction:column;gap:12px;width:100%}
+.login-error{font-size:13px;color:#f87171;text-align:center;min-height:18px}
+.login-btn{width:100%;padding:13px;background:var(--gold);border:none;border-radius:10px;font-size:15px;font-weight:700;color:#07090f;cursor:pointer;font-family:inherit;transition:filter .15s}
+.login-btn:hover{filter:brightness(1.1)}
+.login-btn:active{filter:brightness(0.95)}
+.logout-btn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline}
 </style>
 </head>
 <body>
+
+<!-- ╔══════════════════════════════════════════════════╗ -->
+<!-- ║  LOGIN SCREEN                                    ║ -->
+<!-- ╚══════════════════════════════════════════════════╝ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">₹</div>
+    <div>
+      <div class="login-title">FinancePilot</div>
+      <div class="login-sub" id="login-sub">Sign in to your account</div>
+    </div>
+    <div class="login-fields">
+      <input class="input" id="login-user" type="text" placeholder="Username" autocomplete="username" style="font-size:16px">
+      <input class="input" id="login-pass" type="password" placeholder="Password" autocomplete="current-password" style="font-size:16px">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" id="login-btn" onclick="submitLogin()">Sign In</button>
+    <button class="logout-btn" id="login-reset" onclick="resetCredentials()" style="display:none">Forgot credentials?</button>
+  </div>
+</div>
+
 
 <!-- ╔══════════════════════════════════════════════════╗ -->
 <!-- ║  HEADER                                          ║ -->
@@ -405,7 +436,7 @@ tr:hover td{background:var(--card-hover)}
         <div class="privacy-badge"><span>🔒</span><span>PRIVACY SHIELD ON</span></div>
       </div>
       <div class="header-actions">
-        <div class="sync-status" id="sync-status" title="Google Sheets sync status">
+        <div class="sync-status btn-sync-tap" id="sync-status" title="Tap to sync" onclick="manualSync()" style="cursor:pointer">
           <div class="sync-dot" id="sync-dot"></div>
           <span id="sync-label">Not configured</span>
         </div>
@@ -418,6 +449,7 @@ tr:hover td{background:var(--card-hover)}
         <div class="divider"></div>
         <button class="btn btn-ghost btn-sm" onclick="exportExcel()">↓ Excel</button>
         <button class="btn-icon btn-settings" onclick="openModal('modal-settings')" title="Settings">⚙</button>
+        <button class="btn-icon" onclick="logout()" title="Log out">⏻</button>
       </div>
     </div>
     <nav class="nav-tabs" id="nav-tabs">
@@ -660,7 +692,20 @@ tr:hover td{background:var(--card-hover)}
       <div id="provider-note" style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:4px"></div>
       <div id="provider-link" style="font-size:12px"></div>
     </div>
-
+    <!-- Account -->
+    <div class="settings-section">
+      <div class="settings-section-title">Account</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Logged in as <strong id="logged-in-user" style="color:var(--text)"></strong></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <input class="input" id="chg-pass" type="password" placeholder="New password" style="font-size:16px">
+        <input class="input" id="chg-pass2" type="password" placeholder="Confirm password" style="font-size:16px">
+      </div>
+      <div class="row" style="gap:10px">
+        <button class="btn btn-ghost btn-sm" onclick="changePassword()">Change Password</button>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Log Out</button>
+      </div>
+      <div id="chg-pass-msg" style="font-size:12px;margin-top:8px"></div>
+    </div>
     <!-- Danger zone -->
     <div class="settings-section">
       <div class="settings-section-title">Data</div>
@@ -968,7 +1013,6 @@ function doPost(e) {
   }
 
   if (data.action === "append" && data.transactions?.length) {
-    // Only insert rows whose ID doesn't already exist
     const existingIds = sh.getLastRow() > 1
       ? sh.getRange(2, 1, sh.getLastRow()-1, 1).getValues().flat().map(String)
       : [];
@@ -984,12 +1028,10 @@ function doPost(e) {
   }
 
   if (data.action === "delete" && data.ids?.length) {
-    // Delete rows whose ID is in the provided list
     const idSet = new Set(data.ids.map(String));
     const lastRow = sh.getLastRow();
     if (lastRow > 1) {
       const ids = sh.getRange(2, 1, lastRow-1, 1).getValues().flat().map(String);
-      // Delete bottom-up to avoid index shifting
       for (let i = ids.length - 1; i >= 0; i--) {
         if (idSet.has(ids[i])) sh.deleteRow(i + 2);
       }
@@ -1055,28 +1097,34 @@ async function deleteFromSheet(ids=[]) {
 }
 
 async function pullFromSheet() {
-  if (!S.scriptUrl) return;
+  if (!S.scriptUrl) { setSyncStatus("unconfigured"); return; }
   setSyncStatus("syncing");
   try {
-    const res = await fetch(S.scriptUrl+"?t="+Date.now());
-    if (!res.ok) throw new Error();
+    const res = await fetch(S.scriptUrl + "?t=" + Date.now());
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const d = await res.json();
     if (Array.isArray(d.transactions) && d.transactions.length > 0) {
-      const sheetIds = new Set(d.transactions.map(t=>String(t.id)));
-      const localOnly = S.transactions.filter(t=>!sheetIds.has(String(t.id)));
-      S.transactions = [...d.transactions.map(t=>({...t,amount:parseFloat(t.amount)||0})), ...localOnly];
-      // Mark all sheet transactions as already synced
-      d.transactions.forEach(t=>syncedIds.add(String(t.id)));
+      const sheetIds = new Set(d.transactions.map(t => String(t.id)));
+      const localOnly = S.transactions.filter(t => !sheetIds.has(String(t.id)));
+      S.transactions = [...d.transactions.map(t => ({...t, amount: parseFloat(t.amount)||0})), ...localOnly];
+      d.transactions.forEach(t => syncedIds.add(String(t.id)));
       persistSyncedIds();
       saveLocal();
       renderAll();
-      // Push any local-only transactions that weren't on the sheet yet
       if (localOnly.length) pushToSheet(localOnly);
     }
     setSyncStatus("synced");
   } catch(e) {
-    setSyncStatus(navigator.onLine?"error":"offline");
+    setSyncStatus(navigator.onLine ? "error" : "offline");
+    // Show visible error on mobile where the status pill is tiny
+    toast("Sync failed: " + (e.message || "Check your sheet URL in Settings"), "error");
   }
+}
+
+async function manualSync() {
+  if (!S.scriptUrl) { openModal("modal-settings"); return; }
+  await pullFromSheet();
+  if (S.syncStatus === "synced") toast("Data synced from Google Sheets ✓", "success");
 }
 
 function autoSync() {
@@ -1722,6 +1770,7 @@ function openModal(id) {
   if (id==="modal-settings") {
     document.getElementById("script-url-input").value = S.scriptUrl;
     renderProviderCards();
+    updateLoggedInUser();
   }
   document.getElementById(id)?.classList.add("open");
 }
@@ -1784,21 +1833,157 @@ document.addEventListener("click", e => {
   if (fab && !fab.contains(e.target)) fab.classList.remove("open");
 });
 
+/* ── Auth ──────────────────────────────────────────────────── */
+const LS_AUTH_USER = "finpilot_auth_user";
+const LS_AUTH_PASS = "finpilot_auth_pass";
+const LS_LOGGED_IN = "finpilot_logged_in";
+
+function hashStr(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  return String(h >>> 0);
+}
+
+function initLoginScreen() {
+  const hasCredentials = !!localStorage.getItem(LS_AUTH_USER);
+  const isLoggedIn = sessionStorage.getItem(LS_LOGGED_IN) === "1";
+
+  if (isLoggedIn) {
+    // Already logged in this session
+    document.getElementById("login-screen").classList.add("hidden");
+    updateLoggedInUser();
+    return;
+  }
+
+  if (!hasCredentials) {
+    // First time — set up credentials
+    document.getElementById("login-sub").textContent = "Create your username and password";
+    document.getElementById("login-btn").textContent = "Create Account";
+    document.getElementById("login-reset").style.display = "none";
+  } else {
+    document.getElementById("login-sub").textContent = "Sign in to your account";
+    document.getElementById("login-btn").textContent = "Sign In";
+    document.getElementById("login-reset").style.display = "";
+  }
+
+  // Allow Enter key to submit
+  document.getElementById("login-pass").addEventListener("keydown", e => {
+    if (e.key === "Enter") submitLogin();
+  });
+  document.getElementById("login-user").addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("login-pass").focus();
+  });
+}
+
+function submitLogin() {
+  const user = document.getElementById("login-user").value.trim();
+  const pass = document.getElementById("login-pass").value;
+  const errEl = document.getElementById("login-error");
+  errEl.textContent = "";
+
+  if (!user || !pass) { errEl.textContent = "Please enter both username and password."; return; }
+
+  const hasCredentials = !!localStorage.getItem(LS_AUTH_USER);
+
+  if (!hasCredentials) {
+    // First time setup
+    if (pass.length < 4) { errEl.textContent = "Password must be at least 4 characters."; return; }
+    localStorage.setItem(LS_AUTH_USER, hashStr(user.toLowerCase()));
+    localStorage.setItem(LS_AUTH_PASS, hashStr(pass));
+    sessionStorage.setItem(LS_LOGGED_IN, "1");
+    sessionStorage.setItem("finpilot_username", user);
+    document.getElementById("login-screen").classList.add("hidden");
+    updateLoggedInUser();
+    toast("Account created! Welcome to FinancePilot.", "success");
+  } else {
+    // Login check
+    const storedUser = localStorage.getItem(LS_AUTH_USER);
+    const storedPass = localStorage.getItem(LS_AUTH_PASS);
+    if (hashStr(user.toLowerCase()) === storedUser && hashStr(pass) === storedPass) {
+      sessionStorage.setItem(LS_LOGGED_IN, "1");
+      sessionStorage.setItem("finpilot_username", user);
+      document.getElementById("login-screen").classList.add("hidden");
+      updateLoggedInUser();
+    } else {
+      errEl.textContent = "Incorrect username or password.";
+      document.getElementById("login-pass").value = "";
+    }
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem(LS_LOGGED_IN);
+  sessionStorage.removeItem("finpilot_username");
+  document.getElementById("login-user").value = "";
+  document.getElementById("login-pass").value = "";
+  document.getElementById("login-error").textContent = "";
+  document.getElementById("login-sub").textContent = "Sign in to your account";
+  document.getElementById("login-btn").textContent = "Sign In";
+  document.getElementById("login-reset").style.display = "";
+  document.getElementById("login-screen").classList.remove("hidden");
+  closeModal("modal-settings");
+}
+
+function resetCredentials() {
+  if (!confirm("This will delete your login credentials. You'll create new ones on next login. Your data will NOT be lost.")) return;
+  localStorage.removeItem(LS_AUTH_USER);
+  localStorage.removeItem(LS_AUTH_PASS);
+  sessionStorage.removeItem(LS_LOGGED_IN);
+  document.getElementById("login-sub").textContent = "Create your username and password";
+  document.getElementById("login-btn").textContent = "Create Account";
+  document.getElementById("login-reset").style.display = "none";
+  document.getElementById("login-user").value = "";
+  document.getElementById("login-pass").value = "";
+  document.getElementById("login-screen").classList.remove("hidden");
+}
+
+function changePassword() {
+  const np  = document.getElementById("chg-pass").value;
+  const np2 = document.getElementById("chg-pass2").value;
+  const msg = document.getElementById("chg-pass-msg");
+  if (np.length < 4)  { msg.style.color="var(--expense)"; msg.textContent="Password must be at least 4 characters."; return; }
+  if (np !== np2)     { msg.style.color="var(--expense)"; msg.textContent="Passwords don't match."; return; }
+  localStorage.setItem(LS_AUTH_PASS, hashStr(np));
+  document.getElementById("chg-pass").value = "";
+  document.getElementById("chg-pass2").value = "";
+  msg.style.color="var(--income)";
+  msg.textContent="Password changed successfully!";
+  toast("Password updated!", "success");
+}
+
+function updateLoggedInUser() {
+  const name = sessionStorage.getItem("finpilot_username") || "User";
+  const el = document.getElementById("logged-in-user");
+  if (el) el.textContent = name;
+}
+
 /* ── Init ──────────────────────────────────────────────────── */
 (function init() {
-  loadLocal();
-  renderAll();
-  setSyncStatus(S.scriptUrl?"idle":"unconfigured");
-  // Set provider label in header
-  const pl = document.getElementById("provider-label");
-  if (pl) pl.textContent = "✦ " + (AI_PROVIDERS[S.provider]?.name || "AI");
-  // Pull latest from sheet on load (merges any new rows added elsewhere)
-  if (S.scriptUrl) pullFromSheet();
-  // Periodically pull to catch changes made in the sheet directly
-  setInterval(()=>{ if(S.scriptUrl) pullFromSheet(); }, 5*60*1000);
-  // Online/offline events
-  window.addEventListener("online", ()=>{ if(S.scriptUrl) pushToSheet(); });
-  window.addEventListener("offline", ()=>setSyncStatus("offline"));
+  try {
+    loadLocal();
+    renderAll();
+    setSyncStatus(S.scriptUrl ? "idle" : "unconfigured");
+    const pl = document.getElementById("provider-label");
+    if (pl) pl.textContent = "✦ " + (AI_PROVIDERS[S.provider]?.name || "AI");
+
+    // Auth
+    initLoginScreen();
+
+    if (S.scriptUrl) {
+      if (S.transactions.length === 0) {
+        const rl = document.getElementById("recent-list");
+        if (rl) rl.innerHTML = `<div class="empty"><div class="spinner spinner-lg" style="margin:0 auto 12px"></div><div class="empty-text">Loading data from Google Sheets…</div></div>`;
+      }
+      pullFromSheet();
+    }
+
+    setInterval(() => { if (S.scriptUrl) pullFromSheet(); }, 5 * 60 * 1000);
+    window.addEventListener("online", () => { if (S.scriptUrl) pullFromSheet(); });
+    window.addEventListener("offline", () => setSyncStatus("offline"));
+  } catch(err) {
+    // If anything crashes, bypass PIN screen so user isn't locked out
+    console.error("Init error:", err);
+  }
 })();
 </script>
 </body>
