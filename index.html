@@ -974,8 +974,15 @@ function saveLocal() {
   localStorage.setItem(LS_KEY, JSON.stringify(S.transactions));
 }
 function loadLocal() {
-  try { S.transactions = JSON.parse(localStorage.getItem(LS_KEY)||"[]"); }
-  catch { S.transactions = []; }
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+    // Normalize any ISO timestamp dates already saved (e.g. from previous sheet pulls)
+    S.transactions = raw.map(t => ({
+      ...t,
+      date: String(t.date || "").split("T")[0],
+      amount: parseFloat(t.amount) || 0,
+    }));
+  } catch { S.transactions = []; }
 }
 
 /* ── Google Sheets Sync ────────────────────────────────────── */
@@ -1106,7 +1113,12 @@ async function pullFromSheet() {
     if (Array.isArray(d.transactions) && d.transactions.length > 0) {
       const sheetIds = new Set(d.transactions.map(t => String(t.id)));
       const localOnly = S.transactions.filter(t => !sheetIds.has(String(t.id)));
-      S.transactions = [...d.transactions.map(t => ({...t, amount: parseFloat(t.amount)||0})), ...localOnly];
+      S.transactions = [...d.transactions.map(t => ({
+        ...t,
+        // Strip ISO timestamp suffix if present (e.g. "2026-03-06T18:30:00.000Z" → "2026-03-06")
+        date: String(t.date || "").split("T")[0],
+        amount: parseFloat(t.amount) || 0,
+      })), ...localOnly];
       d.transactions.forEach(t => syncedIds.add(String(t.id)));
       persistSyncedIds();
       saveLocal();
